@@ -5,20 +5,19 @@ import 'command_store.dart';
 class Command {
   final String pattern;
   final Function execute;
-  final List<String> subPatterns;
+  final Map<String, Command> subCommands;
 
-  const Command({
+  Command({
     @required this.pattern,
-    @required this.subPatterns,
     this.execute,
-  });
+  }) : subCommands = {};
 
-  Command handleInput(String pattern) {
-    return CommandStore.instance.getCommand(pattern);
+  Command getSubCommand(String pattern) {
+    return subCommands[CommandStore.instance.formatPatternToKey(pattern)];
   }
 
   @override
   String toString() {
-    return '$pattern -> $subPatterns)';
+    return '$pattern\n-> ${subCommands.values.map((command) => command)}';
   }
 }

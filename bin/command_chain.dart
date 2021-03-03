@@ -14,20 +14,15 @@ class CommandChain {
   List<String> get patterns => patternChain.trim().toLowerCase().split(' ');
 
   List<Command> get commands {
-    // ignore: omit_local_variable_types
-    List<Command> createdCommands = [];
+    int i = -1;
 
-    for (var pattern in patterns.reversed) {
-      final command = Command(
+    return patterns.map((pattern) {
+      i++;
+
+      return Command(
         pattern: pattern,
-        subPatterns:
-            createdCommands.isEmpty ? [] : [createdCommands.last.pattern],
-        execute: createdCommands.isEmpty ? execute : null,
+        execute: i == patterns.length - 1 ? execute : null,
       );
-
-      createdCommands.add(command);
-    }
-
-    return createdCommands;
+    }).toList();
   }
 }

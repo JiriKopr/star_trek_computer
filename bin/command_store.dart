@@ -1,21 +1,5 @@
 import 'command.dart';
-import 'commands.dart';
-
-class _UnknownCommand implements Command {
-  @override
-  Command handleInput(String pattern) {
-    return null;
-  }
-
-  @override
-  String get pattern => null;
-
-  @override
-  List<String> get subPatterns => [];
-
-  @override
-  Function get execute => () => print('Cannot comply, Unknown command');
-}
+import 'command_chain.dart';
 
 class CommandStore {
   static final CommandStore _instance = CommandStore._();
@@ -24,35 +8,99 @@ class CommandStore {
 
   static CommandStore get instance => _instance;
 
-  final Map<String, Command> _commands = {};
+  final Command root = Command(pattern: 'computer');
 
-  void addCommand(Command command) {
-    final key = formatPatternToKey(command.pattern);
-    final foundCommand = _commands[key];
+  void addCommands(List<CommandChain> commandChains) {
+    final commands = commandChains
+        .map((chain) => chain.commands)
+        .reduce((acc, cur) => [...acc, ...cur]);
 
-    if (foundCommand == null) {
-      // No Command with this pattern is stored at this moment
-      _commands[key] = command;
-    } else {
-      // Command with this pattern already exists
+    Command parent = root;
 
-      assert(command.execute == null && foundCommand.execute == null,
-          'Command is already in store, no execute function can be added\n Pattern: ${foundCommand.pattern}');
-
-      foundCommand.subPatterns.addAll(command.subPatterns);
-    }
-  }
-
-  void addCommands(List<Command> commands) {
     for (var command in commands) {
-      addCommand(command);
+      final insertedCommand = parent.subCommands
+          .putIfAbsent(formatPatternToKey(command.pattern), () => command);
+
+      assert(
+        insertedCommand.execute == command.execute,
+        'Duplicate Command.execute registration',
+      );
+
+      parent = insertedCommand;
     }
   }
 
   final List<Command> previousCommands = [];
 
-  void handleInput(String input) {
+  void executeInputtedCommands() {
+    if (previousCommands.isNotEmpty && previousCommands.last.execute != null) {
+      // Execute last inputted Command
+      previousCommands.last.execute();
+      previousCommands.clear();
+    }
+  }
+
+  void parseInputtedPatterns(List<String> patterns) {
+    for (var pattern in patterns) {
+      if (pattern == 'computer') {
+        // The 'computer' keyword has been inputted
+        previousCommands.add(root);
+
+        continue;
+      }
+
+      if (previousCommands.isEmpty) {
+        // The 'computer' keyword hasn't been used yet
+        // skip this pattern
+        continue;
+      }
+
+      final nextCommand = previousCommands.last.getSubCommand(pattern);
+
+      if (nextCommand == null) {
+        // There is no subCommand with passed pattern
+        print('Cannot comply, Unknown command');
+        previousCommands.clear();
+        break;
+      }
+
+      previousCommands.add(nextCommand);
+    }
+  }
+
+  void handleInput(List<String> input) {
+    if (input?.isEmpty != false) {
+      // No new command has been inputted in duration
+      executeInputtedCommands();
+      return;
+    }
+
+    // Parse patterns into Commands
+    List<String> dividedPatterns = input
+        .reduce((acc, cur) => '$acc $cur')
+        .split(' ')
+        .map((pattern) => pattern.trim().toLowerCase())
+        .where((pattern) => pattern.isNotEmpty)
+        .toList();
+
+    parseInputtedPatterns(dividedPatterns);
+
+    // print(previousCommands);
+
+    return;
+
+    if (input.isEmpty && previousCommands.isNotEmpty) {
+      // No new input in 1.5 seconds -> try executing last command
+      if (previousCommands.last.execute != null) {
+        previousCommands.last.execute();
+        previousCommands.clear();
+      }
+
+      // return true;
+    }
+
     final splitInput = input
+        .reduce((acc, cur) => '$acc $cur')
         .toLowerCase()
         .split(' ')
         .map((pattern) => pattern.trim())
@@ -61,40 +109,45 @@ class CommandStore {
     if (splitInput.length > 1) {
       // More then one pattern has been inputted at the same time
       for (var pattern in splitInput) {
-        handleInput(pattern);
+        // if (!handleInput([pattern])) {
+        //   // return false;
+        // }
       }
     } else if (splitInput.isEmpty) {
       // Only space/s were inputted
-      return;
+      // return true;
     }
 
     final pattern = splitInput.first;
 
     // 'computer' is pattern starting the assistant
-    if (pattern == 'computer') previousCommands.add(root);
+    if (pattern == 'computer') {
+      previousCommands.add(root);
 
-    // If there is no previous command, there is no
-    // ongoing chain of commands and user didn't start
-    // new chain using the 'computer' command
-    if (previousCommands.isEmpty) return;
+      // If there is no previous command, there is no
+      // ongoing chain of commands and user didn't start
+      // new chain using the 'computer' command
+      // if (previousCommands.isEmpty) return true;
 
-    // Get next Command from the current (which is previous at this point)
-    final currentCommand = previousCommands.last.handleInput(pattern);
+      // Get next Command from the current (which is previous at this point)
+      final currentCommand = previousCommands.last.getSubCommand(pattern);
 
-    // Well... just execute the bad boy
-    currentCommand.execute?.call();
+      if (currentCommand == null) {
+        // No Command with this pattern was found
+        print('Cannot comply, Unknown command');
+        previousCommands.clear();
+        // return false;
+      }
 
-    // Save currentCommand to history
-    previousCommands.add(currentCommand);
-
-    // If there is no next Command, the chain ends
-    if (currentCommand.subPatterns.isEmpty) {
-      previousCommands.clear();
+      // Save currentCommand to history
+      previousCommands.add(currentCommand);
     }
   }
 
   String formatPatternToKey(String pattern) => pattern.trim().toLowerCase();
 
-  Command getCommand(String pattern) =>
-      _commands[formatPatternToKey(pattern)] ?? _UnknownCommand();
+  @override
+  String toString() {
+    return root.toString();
+  }
 }
