@@ -1,14 +1,25 @@
 import 'command.dart';
 import 'command_chain.dart';
+import 'special_patterns.dart';
 
 final List<CommandChain> chainCommands = [
   CommandChain(
     patternChain: 'Hey Hey people',
-    execute: () => print('Sseth here'),
+    execute: (_) => print('Sseth here'),
+  ),
+  CommandChain(
+    patternChain: 'Hello there',
+    execute: (_) => print('General Kenobi'),
+  ),
+  CommandChain(
+    patternChain: 'Set alarm for ${SpecialPatterns.Time}',
+    execute: (commands) {
+      print('you inserted time: ${commands.last.pattern}');
+    },
   ),
   CommandChain(
     patternChain: 'Tell me the time',
-    execute: () {
+    execute: (_) {
       final date = DateTime.now();
 
       String minutesString =
@@ -19,7 +30,7 @@ final List<CommandChain> chainCommands = [
   ),
   CommandChain(
     patternChain: 'Tell me the date',
-    execute: () {
+    execute: (_) {
       final date = DateTime.now();
 
       print('${date.day}/${date.month}/${date.year}');

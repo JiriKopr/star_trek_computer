@@ -4,7 +4,7 @@ import 'command.dart';
 
 class CommandChain {
   final String patternChain;
-  final Function execute;
+  final Execution execute;
 
   CommandChain({
     @required this.patternChain,

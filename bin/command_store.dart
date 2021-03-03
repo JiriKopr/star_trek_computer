@@ -1,5 +1,6 @@
 import 'command.dart';
 import 'command_chain.dart';
+import 'history_commands.dart';
 
 class CommandStore {
   static final CommandStore _instance = CommandStore._();
@@ -28,12 +29,13 @@ class CommandStore {
     }
   }
 
-  final List<Command> previousCommands = [];
+  final List<HistoryCommand> previousCommands = [];
 
   void executeInputtedCommands() {
-    if (previousCommands.isNotEmpty && previousCommands.last.execute != null) {
+    if (previousCommands.isNotEmpty &&
+        previousCommands.last.command.execute != null) {
       // Execute last inputted Command
-      previousCommands.last.execute();
+      previousCommands.last.command.execute(previousCommands);
       previousCommands.clear();
     }
   }
@@ -42,7 +44,7 @@ class CommandStore {
     for (var pattern in patterns) {
       if (pattern == 'computer') {
         // The 'computer' keyword has been inputted
-        previousCommands.add(root);
+        previousCommands.add(HistoryCommand(command: root, pattern: pattern));
 
         continue;
       }
@@ -53,7 +55,7 @@ class CommandStore {
         continue;
       }
 
-      final nextCommand = previousCommands.last.getSubCommand(pattern);
+      final nextCommand = previousCommands.last.command.getSubCommand(pattern);
 
       if (nextCommand == null) {
         // There is no subCommand with passed pattern
@@ -62,7 +64,8 @@ class CommandStore {
         break;
       }
 
-      previousCommands.add(nextCommand);
+      previousCommands
+          .add(HistoryCommand(command: nextCommand, pattern: pattern));
     }
   }
 
