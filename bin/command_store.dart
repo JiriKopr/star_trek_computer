@@ -85,63 +85,7 @@ class CommandStore {
 
     parseInputtedPatterns(dividedPatterns);
 
-    // print(previousCommands);
-
     return;
-
-    if (input.isEmpty && previousCommands.isNotEmpty) {
-      // No new input in 1.5 seconds -> try executing last command
-      if (previousCommands.last.execute != null) {
-        previousCommands.last.execute();
-        previousCommands.clear();
-      }
-
-      // return true;
-    }
-
-    final splitInput = input
-        .reduce((acc, cur) => '$acc $cur')
-        .toLowerCase()
-        .split(' ')
-        .map((pattern) => pattern.trim())
-        .where((pattern) => pattern.isNotEmpty);
-
-    if (splitInput.length > 1) {
-      // More then one pattern has been inputted at the same time
-      for (var pattern in splitInput) {
-        // if (!handleInput([pattern])) {
-        //   // return false;
-        // }
-      }
-    } else if (splitInput.isEmpty) {
-      // Only space/s were inputted
-      // return true;
-    }
-
-    final pattern = splitInput.first;
-
-    // 'computer' is pattern starting the assistant
-    if (pattern == 'computer') {
-      previousCommands.add(root);
-
-      // If there is no previous command, there is no
-      // ongoing chain of commands and user didn't start
-      // new chain using the 'computer' command
-      // if (previousCommands.isEmpty) return true;
-
-      // Get next Command from the current (which is previous at this point)
-      final currentCommand = previousCommands.last.getSubCommand(pattern);
-
-      if (currentCommand == null) {
-        // No Command with this pattern was found
-        print('Cannot comply, Unknown command');
-        previousCommands.clear();
-        // return false;
-      }
-
-      // Save currentCommand to history
-      previousCommands.add(currentCommand);
-    }
   }
 
   String formatPatternToKey(String pattern) => pattern.trim().toLowerCase();
