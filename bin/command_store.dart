@@ -11,22 +11,20 @@ class CommandStore {
   final Command root = Command(pattern: 'computer');
 
   void addCommands(List<CommandChain> commandChains) {
-    final commands = commandChains
-        .map((chain) => chain.commands)
-        .reduce((acc, cur) => [...acc, ...cur]);
+    for (var chain in commandChains) {
+      Command parent = root;
 
-    Command parent = root;
+      for (var command in chain.commands) {
+        final insertedCommand = parent.subCommands
+            .putIfAbsent(formatPatternToKey(command.pattern), () => command);
 
-    for (var command in commands) {
-      final insertedCommand = parent.subCommands
-          .putIfAbsent(formatPatternToKey(command.pattern), () => command);
+        assert(
+          insertedCommand.execute == command.execute,
+          'Duplicate Command.execute registration',
+        );
 
-      assert(
-        insertedCommand.execute == command.execute,
-        'Duplicate Command.execute registration',
-      );
-
-      parent = insertedCommand;
+        parent = insertedCommand;
+      }
     }
   }
 
